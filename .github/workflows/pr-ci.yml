@@ -3,6 +3,8 @@ name: PR-CI
 on:
   pull_request:
     branches: [ develop, v1.x-develop ]
+  workflow_dispatch:
+    branches: [ develop, v1.x-develop ]
 
 jobs:
   dist-tar:
@@ -21,11 +23,17 @@ jobs:
       - name: Build distribution tar
         run: |
           mvn -Prelease-nacos -DskipTests clean install -U -e -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
+          shopt -s nullglob
+          cd distribution/target
+          FILES=$(ls {*.tar.gz,*.zip})
+          sha256sum $FILES > SHA256.txt
       - uses: actions/upload-artifact@v3
         name: Upload distribution tar
         with:
           name: nacos
-          path: distribution/target/nacos-server-*.tar.gz
+          path: |
+            distribution/target/nacos-server-*.tar.gz
+            distribution/target/SHA256.txt
       - name: Save PR number
         run: |
           mkdir -p ./pr
